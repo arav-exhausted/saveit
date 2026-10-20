@@ -70,12 +70,52 @@ body {
 }
 
 .folder {
-  padding: 30px 22px;
+  padding: 35px 24px;
   background: #171a23;
   border: 1px solid #303440;
   border-radius: 14px;
   font-size: 18px;
 }
+
+
+
+.about {
+  max-width: 750px;
+  margin: 60px auto;
+  padding: 28px;
+  line-height: 1.7;
+}
+
+.about h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.about h3 {
+  margin-top: 28px;
+  margin-bottom: 10px;
+}
+
+.about p {
+  color: #a5a5b5;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.about-tagline {
+  color: #a3e635 !important;
+  font-weight: 700;
+  font-size: 1.1rem !important;
+  margin-top: 24px;
+}
+
+@media (max-width: 600px) {
+  .about {
+    margin: 32px auto;
+    padding: 20px;
+  }
+}
+
 
 @media (max-width: 500px) {
   .navbar {
