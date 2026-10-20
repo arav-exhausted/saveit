@@ -1043,3 +1043,35 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+
+
+
+.youtube-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #30343d;
+  border-radius: 12px;
+  background: #12151c;
+}
+
+.youtube-preview img {
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.youtube-preview p {
+  margin: 6px 0 0;
+  color: #a1a1aa;
+  font-size: 13px;
+}
+
+.metadata-error {
+  color: #f87171;
+  font-size: 13px;
+}

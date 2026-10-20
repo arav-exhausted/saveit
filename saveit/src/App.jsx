@@ -1,65 +1,12 @@
 
 import "./App.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const folders = [
   { name: "YouTube", icon: "▶️" },
   { name: "Instagram", icon: "📸" },
   { name: "Reddit", icon: "🟠" },
   { name: "Other Links", icon: "🌐" },
-];
-
-const initialLinks = [
-  {
-    id: 1,
-    platform: "YouTube",
-    title: "React Tutorial for Beginners",
-    note: "Need to understand React hooks for my project.",
-    date: "Oct 12, 2026",
-    url: "https://www.youtube.com/",
-    thumbnail: "https://img.youtube.com/vi/Ke90Tje7VS0/hqdefault.jpg",
-    watched: false,
-  },
-  {
-    id: 2,
-    platform: "YouTube",
-    title: "Understanding RAG Systems",
-    note: "Useful for building my AI Student Dashboard.",
-    date: "Oct 15, 2026",
-    url: "https://www.youtube.com/",
-    thumbnail: "https://img.youtube.com/vi/T-D1OfcDW1M/hqdefault.jpg",
-    watched: false,
-  },
-  {
-    id: 3,
-    platform: "Instagram",
-    title: "Creative UI Design Inspiration",
-    note: "Ideas for improving my website design.",
-    date: "Oct 14, 2026",
-    url: "https://www.instagram.com/",
-    thumbnail: "",
-    watched: false,
-  },
-  {
-    id: 4,
-    platform: "Reddit",
-    title: "Useful React Development Tips",
-    note: "Tips I want to revisit while coding.",
-    date: "Oct 16, 2026",
-    url: "https://www.reddit.com/",
-    thumbnail: "",
-    watched: false,
-  },
-  {
-    id: 5,
-    platform: "Other Links",
-    title: "A Useful Website",
-    note: "Want to explore this resource later.",
-    date: "Oct 17, 2026",
-    url: "https://example.com/",
-    thumbnail: "",
-    watched: false,
-  },
 ];
 
 function App() {
@@ -71,24 +18,87 @@ function App() {
   const [note, setNote] = useState("");
   const [notification, setNotification] = useState(false);
 
-  const [savedLinks, setSavedLinks] = useState(initialLinks);
+  const [savedLinks, setSavedLinks] = useState([]);
+
+
+  const [youtubeMetadata, setYoutubeMetadata] = useState(null);
+  const [metadataLoading, setMetadataLoading] = useState(false);
+  const [metadataError, setMetadataError] = useState("");
 
   const handleSave = (e) => {
     e.preventDefault();
 
-    console.log({
-      link,
-      title,
-      note,
+    const trimmedLink = link.trim();
+    if (!trimmedLink) return;
+
+    let normalizedUrl;
+    let platform = "Other Links";
+
+    try {
+      normalizedUrl = new URL(
+        trimmedLink.startsWith("http")
+          ? trimmedLink
+          : `https://${trimmedLink}`
+      ).href;
+
+      const hostname = new URL(normalizedUrl).hostname.toLowerCase();
+
+      if (
+        hostname === "youtube.com" ||
+        hostname.endsWith(".youtube.com") ||
+        hostname === "youtu.be"
+      ) {
+        platform = "YouTube";
+      } else if (
+        hostname === "instagram.com" ||
+        hostname.endsWith(".instagram.com")
+      ) {
+        platform = "Instagram";
+      } else if (
+        hostname === "reddit.com" ||
+        hostname.endsWith(".reddit.com")
+      ) {
+        platform = "Reddit";
+      }
+    } catch {
+      setMetadataError("Please enter a valid URL.");
+      return;
+    }
+
+    if (metadataLoading) {
+      setMetadataError("Please wait while the video details are fetched.");
+      return;
+    }
+
+    const finalTitle = title.trim() || youtubeMetadata?.title || "";
+    if (!finalTitle) {
+      setMetadataError("Please enter a title for this link.");
+      return;
+    }
+
+    const newLink = {
+      id: Date.now(),
+      platform,
+      title: finalTitle,
+      note: note.trim(),
+      date: new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      url: youtubeMetadata?.url || normalizedUrl,
+      thumbnail: platform === "YouTube" ? (youtubeMetadata?.thumbnail || "") : "",
+      watched: false,
       notification,
-    });
+    };
 
-    alert("Form tested! Permanent saving comes later.");
-
+    setSavedLinks((current) => [...current, newLink]);
     setLink("");
     setTitle("");
     setNote("");
     setNotification(false);
+    setYoutubeMetadata(null);
+    setMetadataError("");
     setShowPopup(false);
   };
 
@@ -119,6 +129,92 @@ function App() {
   const folderLinks = savedLinks
     .filter((item) => item.platform === selectedFolder)
     .sort((a, b) => a.id - b.id);
+
+
+  
+  useEffect(() => {
+    const trimmedLink = link.trim();
+
+    if (!trimmedLink) {
+      setYoutubeMetadata(null);
+      setMetadataError("");
+      setMetadataLoading(false);
+      setTitle("");
+      return;
+    }
+
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(
+        trimmedLink.startsWith("http")
+          ? trimmedLink
+          : `https://${trimmedLink}`
+      );
+    } catch {
+      return;
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const isYouTube =
+      hostname === "youtube.com" ||
+      hostname.endsWith(".youtube.com") ||
+      hostname === "youtu.be";
+
+    if (!isYouTube) {
+      setYoutubeMetadata(null);
+      setMetadataError("");
+      setMetadataLoading(false);
+      setTitle("");
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setMetadataLoading(true);
+      setMetadataError("");
+      setYoutubeMetadata(null);
+      setTitle("");
+
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/youtube/metadata",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: trimmedLink }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Could not fetch YouTube details.");
+        }
+
+        if (!cancelled) {
+          setYoutubeMetadata(data);
+          setTitle(data.title || "");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setYoutubeMetadata(null);
+          setMetadataError(
+            error.message || "Could not connect to the SaveIT backend."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setMetadataLoading(false);
+        }
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [link]);
+
 
   return (
     <div className="app">
@@ -228,6 +324,33 @@ function App() {
                 onChange={(e) => setLink(e.target.value)}
                 required
               />
+
+
+              
+              {metadataLoading && (
+                <p className="metadata-loading">Fetching YouTube details...</p>
+              )}
+
+              {metadataError && (
+                <p className="metadata-error">{metadataError}</p>
+              )}
+
+              {youtubeMetadata && (
+                <div className="youtube-preview">
+                  {youtubeMetadata.thumbnail && (
+                    <img
+                      src={youtubeMetadata.thumbnail}
+                      alt="YouTube thumbnail"
+                    />
+                  )}
+
+                  <div>
+                    <strong>{youtubeMetadata.title}</strong>
+                    <p>{youtubeMetadata.channel_title}</p>
+                  </div>
+                </div>
+              )}
+
 
               <label htmlFor="saved-title">Title</label>
               <input
