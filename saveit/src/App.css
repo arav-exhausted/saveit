@@ -109,6 +109,143 @@ body {
   margin-top: 24px;
 }
 
+
+
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.link-modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #151821;
+  border: 1px solid #292d39;
+  border-radius: 20px;
+  padding: 30px;
+  color: #f5f5f5;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+}
+
+.link-modal h2 {
+  margin: 0 0 8px;
+  font-size: 1.65rem;
+}
+
+.modal-subtitle {
+  color: #9ca3af;
+  margin: 0 0 26px;
+  font-size: 0.92rem;
+}
+
+.close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: #242834;
+  color: #d1d5db;
+  border: none;
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.link-modal form > label {
+  display: block;
+  margin: 18px 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.link-modal input:not([type="checkbox"]),
+.link-modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  background: #0e1118;
+  border: 1px solid #303545;
+  border-radius: 10px;
+  color: #f5f5f5;
+  font: inherit;
+  outline: none;
+}
+
+.link-modal input:focus,
+.link-modal textarea:focus {
+  border-color: #a3e635;
+}
+
+.link-modal textarea {
+  resize: vertical;
+}
+
+.notification-option {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  background: #0e1118;
+  border: 1px solid #303545;
+  border-radius: 12px;
+}
+
+.notification-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.notification-option small {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.notification-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: #a3e635;
+  cursor: pointer;
+}
+
+.save-btn {
+  width: 100%;
+  margin-top: 22px;
+  padding: 13px;
+  background: #a3e635;
+  color: #10130b;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.save-btn:hover {
+  background: #bef264;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 500px) {
+  .link-modal {
+    padding: 24px 20px;
+  }
+}
+
+
 @media (max-width: 600px) {
   .about {
     margin: 32px auto;
