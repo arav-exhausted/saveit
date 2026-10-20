@@ -999,6 +999,20 @@ button {
   }
 }
 
+
+.folder-link-count {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #a3e635;
+  background: rgba(163, 230, 53, 0.08);
+  font-size: 12px;
+  font-weight: 500;
+}
 @media (max-width: 420px) {
   .navbar {
     padding: 18px;

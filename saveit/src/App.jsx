@@ -20,6 +20,7 @@ function App() {
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [notification, setNotification] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [savedLinks, setSavedLinks] = useState([]);
 
@@ -97,8 +98,20 @@ function App() {
       watched: false,
       notification,
     };
+    const folderCount = savedLinks.filter(
+      (item) => item.platform === platform
+    ).length;
 
+    if (folderCount >= 5) {
+      setErrorMessage(
+        `You can save only 5 links in ${platform}!`
+      );
+      return;
+    }
+
+    setErrorMessage("");
     setSavedLinks((current) => [...current, newLink]);
+
     setLink("");
     setTitle("");
     setNote("");
@@ -281,16 +294,25 @@ function App() {
         <h2>Your folders</h2>
 
         <div className="folder-grid">
+
           {folders.map((folder) => (
+
             <button
               type="button"
               className="folder"
               key={folder.name}
               onClick={() => openFolder(folder.name)}
             >
+              
               <span className="folder-icon">{folder.icon}</span>
               <span>{folder.name}</span>
               <span className="folder-arrow">↗</span>
+              <br />
+              <span className="folder-link-count">
+                {savedLinks.filter(
+                  (item) => item.platform === folder.name
+                ).length}/5 saved
+              </span>
             </button>
           ))}
         </div>
@@ -316,6 +338,11 @@ function App() {
             </button>
 
             <h2>Save a new link</h2>
+            {errorMessage && (
+              <p className="metadata-error">
+                {errorMessage}
+              </p>
+            )}
             <p className="modal-subtitle">
               Save it now. Remember why later.
             </p>
