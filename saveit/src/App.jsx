@@ -2,6 +2,9 @@
 import "./App.css";
 import { useState, useEffect } from "react";
 
+import saveitlogo from "../assets/logo.jpeg";
+
+
 const folders = [
   { name: "YouTube", icon: "▶️" },
   { name: "Instagram", icon: "📸" },
@@ -59,6 +62,9 @@ function App() {
         hostname.endsWith(".reddit.com")
       ) {
         platform = "Reddit";
+      }
+      else{
+        platform = "Other Links"
       }
     } catch {
       setMetadataError("Please enter a valid URL.");
@@ -439,6 +445,7 @@ function App() {
                     }`}
                     key={item.id}
                   >
+                    
                     <a
                       className="saved-thumbnail"
                       href={item.url}
@@ -446,20 +453,19 @@ function App() {
                       rel="noopener noreferrer"
                       aria-label={`Open ${item.title}`}
                     >
-                      {item.thumbnail ? (
-                        <img
-                          src={item.thumbnail}
-                          alt=""
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span className="thumbnail-placeholder">
-                          {folders.find(
-                            (f) => f.name === item.platform
-                          )?.icon}
-                        </span>
-                      )}
+                      <img
+                        src={item.thumbnail || saveitlogo}
+                        alt={item.title || "SaveIT"}
+                        className="link-thumbnail"
+                        onError={(e) => {
+                          if (!e.currentTarget.dataset.fallback) {
+                            e.currentTarget.dataset.fallback = "true";
+                            e.currentTarget.src = saveitlogo;
+                          }
+                        }}
+                      />
                     </a>
+
 
                     <div className="saved-link-info">
                       <div className="saved-title-line">
