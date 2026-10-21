@@ -19,7 +19,6 @@ function App() {
   const [link, setLink] = useState("");
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
-  const [notification, setNotification] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [savedLinks, setSavedLinks] = useState([]);
@@ -29,7 +28,7 @@ function App() {
   const [metadataLoading, setMetadataLoading] = useState(false);
   const [metadataError, setMetadataError] = useState("");
 
-  const handleSave = (e) => {
+  const handleSave = async(e) => {
     e.preventDefault();
 
     const trimmedLink = link.trim();
@@ -84,43 +83,85 @@ function App() {
     }
 
     const newLink = {
-      id: Date.now(),
+      url: normalizedUrl,
       platform,
       title: finalTitle,
       note: note.trim(),
-      date: new Date().toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
-      url: youtubeMetadata?.url || normalizedUrl,
-      thumbnail: platform === "YouTube" ? (youtubeMetadata?.thumbnail || "") : "",
+      thumbnail:
+        platform === "YouTube"
+          ? youtubeMetadata?.thumbnail || ""
+          : "",
       watched: false,
-      notification,
     };
+
+    
     const folderCount = savedLinks.filter(
       (item) => item.platform === platform
     ).length;
 
     if (folderCount >= 5) {
-      setErrorMessage(
-        `You can save only 5 links in ${platform}!`
-      );
+      setErrorMessage(`You can save only 5 links in ${platform}!`);
       return;
     }
 
     setErrorMessage("");
-    setSavedLinks((current) => [...current, newLink]);
 
-    setLink("");
-    setTitle("");
-    setNote("");
-    setNotification(false);
-    setYoutubeMetadata(null);
-    setMetadataError("");
-    setShowPopup(false);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: newLink.url,
+          platform: newLink.platform,
+          title: newLink.title,
+          description: newLink.note,
+          thumbnail_url: newLink.thumbnail || null,
+          watched: newLink.watched,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : "Could not save link."
+        );
+      }
+
+      const saved = data.link;
+
+      const savedLink = {
+        id: saved.id,
+        platform: saved.platform,
+        title: saved.title,
+        note: saved.description || "",
+        date: new Date(saved.created_at).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        url: saved.url,
+        thumbnail: saved.thumbnail_url || "",
+        watched: saved.watched,
+      };
+
+      setSavedLinks((current) => [...current, savedLink]);
+
+      setLink("");
+      setTitle("");
+      setNote("");
+      setYoutubeMetadata(null);
+      setMetadataError("");
+      setShowPopup(false);
+    } catch (error) {
+      console.error("Save failed:", error);
+      setErrorMessage(error.message || "Could not save link.");
+    }
   };
-
   const openFolder = (folderName) => {
     setSelectedFolder(folderName);
   };
@@ -139,10 +180,32 @@ function App() {
     );
   };
 
-  const deleteLink = (id) => {
-    setSavedLinks((current) =>
-      current.filter((item) => item.id !== id)
-    );
+  const deleteLink = async (id) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/links/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Could not delete link."
+        );
+      }
+
+      // Update UI only after successful database deletion
+      setSavedLinks((current) =>
+        current.filter((item) => item.id !== id)
+      );
+
+    } catch (error) {
+      console.error("Delete failed:", error);
+      window.alert(error.message || "Could not delete link.");
+    }
   };
 
   const folderLinks = savedLinks
@@ -151,88 +214,132 @@ function App() {
 
 
   
+  
   useEffect(() => {
-    const trimmedLink = link.trim();
-
-    if (!trimmedLink) {
-      setYoutubeMetadata(null);
-      setMetadataError("");
-      setMetadataLoading(false);
-      setTitle("");
-      return;
-    }
-
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(
-        trimmedLink.startsWith("http")
-          ? trimmedLink
-          : `https://${trimmedLink}`
-      );
-    } catch {
-      return;
-    }
-
-    const hostname = parsedUrl.hostname.toLowerCase();
-    const isYouTube =
-      hostname === "youtube.com" ||
-      hostname.endsWith(".youtube.com") ||
-      hostname === "youtu.be";
-
-    if (!isYouTube) {
-      setYoutubeMetadata(null);
-      setMetadataError("");
-      setMetadataLoading(false);
-      setTitle("");
-      return;
-    }
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      setMetadataLoading(true);
-      setMetadataError("");
-      setYoutubeMetadata(null);
-      setTitle("");
-
+    async function loadLinks() {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/youtube/metadata",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: trimmedLink }),
-          }
-        );
+        const response = await fetch("http://127.0.0.1:8000/links");
+
+        if (!response.ok) {
+          throw new Error("Failed to load saved links");
+        }
 
         const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.detail || "Could not fetch YouTube details.");
-        }
+        const formattedLinks = data.links.map((item) => ({
+          id: item.id,
+          platform: item.platform,
+          title: item.title,
+          note: item.description || "",
+          date: new Date(item.created_at).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          url: item.url,
+          thumbnail: item.thumbnail_url || "",
+          watched: item.watched,
+        }));
 
-        if (!cancelled) {
-          setYoutubeMetadata(data);
-          setTitle(data.title || "");
-        }
+        setSavedLinks(formattedLinks);
       } catch (error) {
-        if (!cancelled) {
-          setYoutubeMetadata(null);
-          setMetadataError(
-            error.message || "Could not connect to the SaveIT backend."
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setMetadataLoading(false);
-        }
+        console.error("Could not load links:", error);
       }
-    }, 600);
+    }
 
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [link]);
+    loadLinks();
+}, []);
+
+
+    
+useEffect(() => {
+  const trimmedLink = link.trim();
+
+  if (!trimmedLink) {
+    setYoutubeMetadata(null);
+    setMetadataError("");
+    setMetadataLoading(false);
+    setTitle("");
+    return;
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(
+      trimmedLink.startsWith("http")
+        ? trimmedLink
+        : `https://${trimmedLink}`
+    );
+  } catch {
+    return;
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+
+  const isYouTube =
+    hostname === "youtube.com" ||
+    hostname.endsWith(".youtube.com") ||
+    hostname === "youtu.be";
+
+  if (!isYouTube) {
+    setYoutubeMetadata(null);
+    setMetadataError("");
+    setMetadataLoading(false);
+    setTitle("");
+    return;
+  }
+
+  let cancelled = false;
+
+  const timer = setTimeout(async () => {
+    setMetadataLoading(true);
+    setMetadataError("");
+    setYoutubeMetadata(null);
+    setTitle("");
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/youtube/metadata",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: trimmedLink }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Could not fetch YouTube details."
+        );
+      }
+
+      if (!cancelled) {
+        setYoutubeMetadata(data);
+        setTitle(data.title || "");
+      }
+    } catch (error) {
+      if (!cancelled) {
+        setYoutubeMetadata(null);
+        setMetadataError(
+          error.message || "Could not connect to the SaveIT backend."
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setMetadataLoading(false);
+      }
+    }
+  }, 600);
+
+  return () => {
+    cancelled = true;
+    clearTimeout(timer);
+  };
+}, [link]);
+
 
 
   return (
@@ -406,22 +513,6 @@ function App() {
                 rows={3}
               />
 
-              <label className="notification-option">
-                <span>
-                  <strong>Remind me later</strong>
-                  <small>
-                    Get a reminder to revisit this link
-                  </small>
-                </span>
-
-                <input
-                  type="checkbox"
-                  checked={notification}
-                  onChange={(e) =>
-                    setNotification(e.target.checked)
-                  }
-                />
-              </label>
 
               <button className="save-btn" type="submit">
                 Save Link
