@@ -25,7 +25,6 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase  = create_client(SUPABASE_URL,SUPABASE_KEY)
 
-print("SUPABASE URL:", repr(SUPABASE_URL))
 # Allow requests from the React + Vite frontend
 app.add_middleware(
     CORSMiddleware,
@@ -34,7 +33,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
     ],
     allow_credentials=False,
-    allow_methods=["GET", "POST","DELETE"],
+    allow_methods=["GET", "POST","DELETE","PATCH"],
     allow_headers=["*"],
 )
 
@@ -172,6 +171,43 @@ def delete_link(link_id: int):
         raise HTTPException(
             status_code=500,
             detail="Could not delete link from database"
+        )
+
+
+class LinkUpdate(BaseModel):
+    watched: bool
+
+
+@app.patch("/links/{link_id}")
+def update_link(link_id: int, payload: LinkUpdate):
+    try:
+        result = (
+            supabase
+            .table("links")
+            .update({"watched": payload.watched})
+            .eq("id", link_id)
+            .execute()
+        )
+
+        if not result.data:
+            raise HTTPException(
+                status_code=404,
+                detail="Link not found"
+            )
+
+        return {
+            "message": "Watched status updated!",
+            "link": result.data[0]
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        print("UPDATE LINK ERROR:", repr(exc))
+        raise HTTPException(
+            status_code=500,
+            detail="Could not update watched status"
         )
 
 @app.post("/youtube/metadata")
