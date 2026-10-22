@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import saveitlogo from "../assets/logo.jpeg";
 import { supabase } from "./supabase";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://saveit-7cg1.onrender.com/";
 
 const folders = [
   { name: "YouTube", icon: "▶️" },
