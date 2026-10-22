@@ -1089,3 +1089,36 @@ button {
   color: #f87171;
   font-size: 13px;
 }
+
+.loginbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 26px;
+
+  background: #ff3864;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+
+  border: 1px solid transparent;
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: background 0.2s ease,
+              transform 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
+.loginbtn:hover {
+  background: #ed2854;
+  box-shadow: 0 6px 20px rgba(255, 56, 100, 0.25);
+  transform: translateY(-2px);
+}
+
+.loginbtn:active {
+  transform: translateY(0);
+}
+

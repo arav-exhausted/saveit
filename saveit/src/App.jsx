@@ -488,7 +488,7 @@ function App() {
           <h1>Everything worth saving.</h1>
           <p>Save it now. Find it anytime.</p>
 
-          <button type="button" onClick={loginWithGoogle}>
+          <button type="button" className="loginbtn" onClick={loginWithGoogle}>
             Continue with Google
           </button>
         </main>
@@ -501,7 +501,7 @@ function App() {
     <div className="app">
       <nav className="navbar">
         <h1>🔖 SaveIT</h1>
-        <button type="button" onClick={logout}>
+        <button type="button" className="loginbtn" onClick={logout}>
           Logout
         </button>
       </nav>
